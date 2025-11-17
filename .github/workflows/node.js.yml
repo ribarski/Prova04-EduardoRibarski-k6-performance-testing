@@ -2,22 +2,40 @@ name: K6 Performance Testing
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ master ]
-  schedule:   
-    - cron: '0 12 * * *'
+    branches: [ master, main ]
+  workflow_dispatch:
 
 jobs:
   run-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v4 # Ajustado de v5 para v4
 
       - name: Setup K6
-        uses: grafana/setup-k6-action@v1.1.0
-      - name: Run local k6 test
-        uses: grafana/run-k6-action@v1.3.1
+        uses: grafana/setup-k6-action@v1
+      
+      # Como seu script usa imports externos, não precisa obrigatoriamente de npm install
+      # mas se no futuro usar libs locais, descomente abaixo:
+      # - name: Install Dependencies
+      #   run: npm ci
+
+      - name: Criar diretório de output
+        run: mkdir -p src/output
+
+      - name: Run k6 test
+        uses: grafana/run-k6-action@v1
         with:
-          path: src/tests
+          path: src/tests/Tests.spec.js
+          # Aqui adicionamos as flags para gerar o dashboard igual ao seu package.json
+          flags: --out web-dashboard -e K6_WEB_DASHBOARD_EXPORT=src/output/dashboard.html
+
+      - name: Upload dos Relatórios
+        if: always() 
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-reports
+          path: src/output/
+          retention-days: 30

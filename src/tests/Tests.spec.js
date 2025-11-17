@@ -1,7 +1,7 @@
 import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/latest/dist/bundle.js';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js';
 import http from 'k6/http';
-import { check, sleep } from 'k6'; 
+import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
 export const getDurationTrend = new Trend('get_duration_trend', true);
@@ -28,8 +28,9 @@ export function handleSummary(data) {
 }
 
 export default function () {
-  const baseUrl = 'https://reqres.in';
-  const endpoint = '/api/users?page=2';
+  // --- ALTERAÇÃO: NOVA API (CROCODILE API DO K6) ---
+  const baseUrl = 'https://test-api.k6.io';
+  const endpoint = '/public/crocodiles/'; // Endpoint público que lista crocodilos
   
   const params = {
     headers: {
@@ -41,9 +42,9 @@ export default function () {
 
   getDurationTrend.add(res.timings.duration);
   
-  // Log de debug: Se der erro, mostra qual status code está retornando no terminal
+  // Debug: Loga erro apenas se falhar
   if (res.status !== 200) {
-      console.log(`Erro: Status ${res.status}`); 
+      console.log(`Erro na Crocodile API: Status ${res.status}`); 
   }
 
   const isStatus200 = res.status === 200;
@@ -53,8 +54,6 @@ export default function () {
     'GET Status is 200': () => isStatus200
   });
 
-  // <--- A CORREÇÃO MÁGICA
-  // Faz o usuário esperar 1 segundo antes da próxima repetição.
-  // Isso reduz o RPS (Requests per Second) mas mantém os 92 usuários simultâneos ativos.
+  // Sleep de 1 segundo é suficiente para essa API (Pacing realista)
   sleep(1); 
 }
